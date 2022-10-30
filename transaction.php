@@ -23,11 +23,14 @@
         require('config/config.php');
         require('config/db.php');
 
+        //Get the Value Sent Over the Search Form
+        $search = $_GET['search'];
+
         //Define the Total Number of Results You Want Per Page
         $results_per_page = 10;
 
         //Find the Total Number of Results/Rows Stored in Database
-        $query = "SELECT * FROM employee";
+        $query = "SELECT * FROM transaction";
         $result = mysqli_query($conn, $query);
         $number_of_result = mysqli_num_rows($result);
 
@@ -45,14 +48,21 @@
         $page_first_result = ($page-1) * $results_per_page;
 
         //Create Query
-        $query = 'SELECT employee.lastname, employee.firstname, employee.address, office.name as office_name FROM employee, office 
-                  WHERE employee.office_id = office.id ORDER BY employee.lastname LIMIT '. $page_first_result .',' . $results_per_page . '';
+        if(strlen($search) > 0){
+            $query = 'SELECT transaction.datelog, transaction.documentcode, transaction.action, transaction.remarks, office.name as office_name, CONCAT(employee.lastname, ", ", employee.firstname) as employee_fullname FROM employee, office, transaction 
+                      WHERE transaction.employee_id=employee.id and transaction.office_id=office.id AND transaction.documentcode = ' .$search . '
+                      ORDER BY transaction.documentcode, transaction.datelog LIMIT '. $page_first_result .',' . $results_per_page . '';
+        }else{
+            $query = 'SELECT transaction.datelog, transaction.documentcode, transaction.action, transaction.remarks, office.name as office_name, CONCAT(employee.lastname, ", ", employee.firstname) as employee_fullname FROM employee, office, transaction 
+                      WHERE transaction.employee_id=employee.id and transaction.office_id=office.id ORDER BY transaction.documentcode, transaction.datelog LIMIT '. $page_first_result .',' . $results_per_page . '';
+        }
         
+
         //Get the result
         $result = mysqli_query($conn, $query);
         
         //Fetch the data
-        $employees = mysqli_fetch_all($result, MYSQLI_ASSOC);
+        $transactions = mysqli_fetch_all($result, MYSQLI_ASSOC);
         
         // Free result
         mysqli_free_result($result);
@@ -60,60 +70,72 @@
         // Close the connection
         mysqli_close($conn);
     ?>
-
-    <div class="wrapper">
+<div class="wrapper">
         <div class="sidebar" data-image="assets/img/sidebar-5.jpg">
+
             <div class="sidebar-wrapper">
-            <?php include('includes/sidebar.php'); ?>    
+                <?php include('includes/sidebar.php'); ?>
+                
             </div>
         </div>
         <div class="main-panel">
-            <?php include('includes/navbar.php');?>
+            <?php include('includes/navbar.php'); ?>
+
             <div class="content">
                 <div class="container-fluid">
                     <div class="section">
                     </div>
                     <div class="row">
-                        <div class="col-md-12">
-                                <div class="card strpied-tabled-with-hover">
-                                    <br/>
-                                    <div class="col-md-12">
-                                        <a href="employee-add.php">
-                                            <button type="submit" class="btn btn-info btn-fill pull-right">Add New Employee</button>
-                                        </a>
-                                    </div>
-                                    <div class="card-header ">
-                                        <h4 class="card-title">Employees</h4>
-                                        <p class="card-category">Here is a subtitle for this table</p>
-                                    </div>
-                                    <div class="card-body table-full-width table-responsive">
-                                        <table class="table table-hover table-striped">
-                                            <thead>
-                                                <th>Last Name</th>
-                                                <th>First Name</th>
-                                                <th>Address</th>
-                                                <th>Office</th>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach($employees as $employee) : ?>
-                                                <tr>
-                                                    <td><?php echo $employee['lastname']; ?></td>
-                                                    <td><?php echo $employee['firstname']; ?></td>
-                                                    <td><?php echo $employee['address']; ?></td>
-                                                    <td><?php echo $employee['office_name']; ?></td>
-                                                </tr>
-                                                <?php endforeach ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    <div class="col-md-12">
+                            <div class="card strpied-tabled-with-hover">
+                            <br/>
+                                <div class="col-md-12">
+                                    <form action="transaction.php" method="GET">                                        
+                                        <input type="text" name="search"/>
+                                        <input type="submit" value="Search" class="btn btn-info btn-fill"/>
+                                    </form>
+                                </div>
+                                <div class="col-md-12">
+                                    <a href="transaction-add.php">                                        
+                                        <button type="submit" class="btn btn-info btn-fill pull-right">Add New Transaction</button>
+                                    </a>
+                                </div>
+                                <div class="card-header ">
+                                    <h4 class="card-title">Transactions</h4>
+                                    <p class="card-category">Here is a subtitle for this table</p>
+                                </div>
+                                <div class="card-body table-full-width table-responsive">
+                                    <table class="table table-hover table-striped">
+                                        <thead>
+                                            <th>Datelog</th>
+                                            <th>Document Code</th>
+                                            <th>Action</th>
+                                            <th>Office</th>
+                                            <th>Employee</th>
+                                            <th>Remarks</th>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach($transactions as $transaction) : ?>
+                                            <tr>
+                                                <td><?php echo $transaction['datelog']; ?></td>
+                                                <td><?php echo $transaction['documentcode']; ?></td>
+                                                <td><?php echo $transaction['action']; ?></td>
+                                                <td><?php echo $transaction['office_name']; ?></td>
+                                                <td><?php echo $transaction['employee_fullname']; ?></td>
+                                                <td><?php echo $transaction['remarks']; ?></td>
+                                            </tr>
+                                            <?php endforeach ?>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
+                        </div>
                     </div>
                     <?php
                         for($page=1; $page <= $number_of_page; $page++){
-                            echo '<a href = "employee.php?page='. $page .'"> | ' . $page . '</a>';
+                            echo '<a href = "transaction.php?page='. $page .'"> | ' . $page . '</a>';
                         }
-                    ?>    
+                    ?>
                 </div>
             </div>
             <footer class="footer">

@@ -23,11 +23,40 @@
         require('config/config.php');
         require('config/db.php');
 
-        $query = 'SELECT * FROM office ORDER BY name';
+        //Define the Total Number of Results You Want Per Page
+        $results_per_page = 10;
+
+        //Find the Total Number of Results/Rows Stored in Database
+        $query = "SELECT * FROM office";
         $result = mysqli_query($conn, $query);
+        $number_of_result = mysqli_num_rows($result);
+
+        //Determine the Total Number of Pages Available
+        $number_of_page = ceil($number_of_result / $results_per_page);
+
+        //Determine Which Page Number Visitor is Currently On
+        if(!isset($_GET['page'])){
+            $page = 1;
+        }else{
+            $page = $_GET['page'];
+        }
+
+        //Determine the SQL LIMIT Starting Number for the Results on the Display Page
+        $page_first_result = ($page-1) * $results_per_page;
+
+        //Create Query
+        $query = 'SELECT * FROM office ORDER BY name LIMIT '. $page_first_result .',' . $results_per_page . '';
+
+        //Get the result
+        $result = mysqli_query($conn, $query);
+
+        //Fetch the data
         $offices = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
+        // Free result
         mysqli_free_result($result);
+
+        // Close the connection
         mysqli_close($conn);
     ?>
 
@@ -46,8 +75,14 @@
                     <div class="row">
                         <div class="col-md-12">
                                 <div class="card strpied-tabled-with-hover">
+                                    <br/>
+                                    <div class="col-md-12">
+                                        <a href="office-add.php">
+                                            <button type="submit" class="btn btn-info btn-fill pull-right">Add New Office</button>
+                                        </a>
+                                    </div>
                                     <div class="card-header ">
-                                        <h4 class="card-title">Striped Table with Hover</h4>
+                                        <h4 class="card-title">Offices</h4>
                                         <p class="card-category">Here is a subtitle for this table</p>
                                     </div>
                                     <div class="card-body table-full-width table-responsive">
@@ -78,7 +113,12 @@
                                     </div>
                                 </div>
                             </div>
-                    </div>    
+                    </div>  
+                    <?php
+                        for($page=1; $page <= $number_of_page; $page++){
+                            echo '<a href = "office.php?page='. $page .'"> | ' . $page . '</a>';
+                        }
+                    ?>   
                 </div>
             </div>
             <footer class="footer">
